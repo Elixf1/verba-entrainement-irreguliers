@@ -79,6 +79,22 @@
     .mode-card strong { display: block; margin-bottom: 7px; font-size: 15px; letter-spacing: -.02em; }
     .mode-card small { max-width: 210px; color: var(--muted); font-size: 12px; line-height: 1.5; }
     .mode-arrow { position: absolute; right: 18px; bottom: 19px; color: #8a978f; font-size: 18px; }
+    .difficulty-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(18,31,24,.48); backdrop-filter: blur(5px); }
+    .difficulty-backdrop[hidden] { display: none; }
+    .difficulty-dialog { width: min(590px,100%); padding: 30px; border: 1px solid #e5ebe4; border-radius: 24px; background: #fff; box-shadow: 0 24px 80px rgba(14,34,21,.24); }
+    .difficulty-dialog h2 { margin: 9px 0 7px; font-size: 27px; letter-spacing: -.05em; }
+    .difficulty-dialog > p { margin-bottom: 20px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .difficulty-list { display: grid; gap: 9px; }
+    .difficulty-choice { display: flex; align-items: center; gap: 13px; width: 100%; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink); text-align: left; }
+    .difficulty-choice:hover { border-color: #a9c7b1; background: #f8fbf8; }
+    .difficulty-level { display: grid; flex: none; place-items: center; width: 37px; height: 37px; border-radius: 11px; background: var(--mint); color: var(--green); font-size: 16px; }
+    .difficulty-choice:nth-child(2) .difficulty-level { background: #f0effa; color: #7164a3; }
+    .difficulty-choice:nth-child(3) .difficulty-level { background: #fff2e3; color: #aa6c28; }
+    .difficulty-choice:nth-child(4) .difficulty-level { background: #fff0c7; color: #946218; }
+    .difficulty-copy strong,.difficulty-copy small { display: block; }
+    .difficulty-copy strong { margin-bottom: 3px; font-size: 14px; }
+    .difficulty-copy small { color: var(--muted); font-size: 11px; }
+    .difficulty-cancel { margin-top: 13px; padding: 9px 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 650; }
     .saved-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 19px; padding: 17px 19px; border: 1px solid #deeadf; border-radius: 16px; background: #eff6ef; }
     .saved-panel[hidden] { display: none; }
     .saved-panel p { margin: 0; color: #536357; font-size: 13px; }
@@ -139,6 +155,13 @@
     .result-hero { padding: 37px 40px; border: 1px solid #e1ebe0; border-radius: 25px; background: linear-gradient(120deg, #f4f8ef, #edf5ec); }
     .result-hero h1 { margin: 10px 0 10px; font-size: clamp(34px, 5vw, 48px); }
     .result-hero p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+    .crown-award { display: flex; align-items: center; gap: 16px; margin-top: 20px; padding: 17px 19px; border: 1px solid #f0dc9d; border-radius: 17px; background: linear-gradient(110deg,#fff8df,#fffdf6); animation: crown-pop .65s cubic-bezier(.2,.85,.25,1.2) both; }
+    .crown-award[hidden] { display: none; }
+    .crown-art { flex: none; width: 54px; height: 54px; filter: drop-shadow(0 5px 5px rgba(152,107,16,.2)); animation: crown-bob 1.5s ease-in-out infinite alternate; }
+    .crown-award strong { display: block; margin-bottom: 3px; color: #795414; font-size: 15px; }
+    .crown-award span { color: #927841; font-size: 12px; line-height: 1.45; }
+    @keyframes crown-pop { from { opacity:0; transform:translateY(18px) scale(.9) } to { opacity:1; transform:translateY(0) scale(1) } }
+    @keyframes crown-bob { to { transform:translateY(-5px) rotate(5deg) } }
     .final-score { display: flex; align-items: center; gap: 14px; margin-top: 26px; }
     .score-total { display: grid; place-items: center; width: 80px; height: 80px; border: 1px solid rgba(33,107,75,.15); border-radius: 22px; background: #fff; color: var(--green); font-size: 25px; font-weight: 790; letter-spacing: -.05em; }
     .score-total small { display: block; margin-top: -14px; color: #8c978f; font-size: 10px; font-weight: 650; letter-spacing: .1em; }
@@ -205,6 +228,7 @@
       .translation-form { flex-direction: column; }
       .translation-submit { width: 100%; }
       .result-hero { padding: 28px 22px; }
+      .difficulty-dialog { padding: 24px 19px; }
       .final-score { align-items: flex-start; flex-direction: column; }
       .score-breakdown { gap: 7px; }
       .result-sections { grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -307,6 +331,21 @@
     </main>
   </div>
 
+  <div class="difficulty-backdrop" id="difficulty-backdrop" hidden>
+    <section class="difficulty-dialog" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
+      <div class="eyebrow"><span class="tiny-spark">✳</span> règle ton défi</div>
+      <h2 id="difficulty-title">Choisis ta difficulté</h2>
+      <p>Plus le niveau monte, plus les formes proposées se ressemblent. Les 20 verbes restent les mêmes.</p>
+      <div class="difficulty-list">
+        <button class="difficulty-choice" data-difficulty="facile"><span class="difficulty-level">☀</span><span class="difficulty-copy"><strong>Facile</strong><small>Des réponses assez différentes pour prendre confiance.</small></span></button>
+        <button class="difficulty-choice" data-difficulty="moyen"><span class="difficulty-level">◈</span><span class="difficulty-copy"><strong>Moyen</strong><small>Un mélange de formes proches et de pièges classiques.</small></span></button>
+        <button class="difficulty-choice" data-difficulty="dur"><span class="difficulty-level">⚡</span><span class="difficulty-copy"><strong>Dur</strong><small>Des formes très proches, attention aux terminaisons.</small></span></button>
+        <button class="difficulty-choice" data-difficulty="ultime"><span class="difficulty-level">♛</span><span class="difficulty-copy"><strong>Ultime MAKHLOUF</strong><small>Les propositions les plus ressemblantes. À toi de jouer.</small></span></button>
+      </div>
+      <button class="difficulty-cancel" id="difficulty-cancel">Annuler</button>
+    </section>
+  </div>
+
   <script>
   (() => {
     "use strict";
@@ -376,13 +415,13 @@
         if (raw.active && Array.isArray(raw.active.queue) && raw.active.queue.length && Number.isInteger(raw.active.index)) {
           const queue = raw.active.queue.filter(item => verbs.some(v => v.infinitive === item.verb) && (item.quiz || item.translation));
           if (queue.length && raw.active.index < queue.length) {
-            saved.active = { mode: raw.active.mode, queue, index: Math.max(0, raw.active.index), stage: raw.active.stage === "translation" ? "translation" : "quiz" };
+            saved.active = { mode: raw.active.mode, difficulty: raw.active.difficulty || "moyen", queue, index: Math.max(0, raw.active.index), stage: raw.active.stage === "translation" ? "translation" : "quiz" };
           }
         }
       }
     } catch (_) { saved = freshState(); }
     const copySession = session => session ? { ...session, queue: session.queue.map(item => ({ ...item })) } : null;
-    const state = { view: "home", records: saved.records, active: saved.active, checkpoint: copySession(saved.active), feedback: null, selectedOption: null, options: [] };
+    const state = { view: "home", records: saved.records, active: saved.active, checkpoint: copySession(saved.active), feedback: null, selectedOption: null, options: [], pendingMode: null };
     const byId = Object.fromEntries(verbs.map(v => [v.infinitive, v]));
     const modeNames = { training: "Entraînement complet", random: "Dans le désordre", review: "Révision des erreurs", translations: "Traductions à retravailler" };
     const $ = id => document.getElementById(id);
@@ -435,7 +474,7 @@
       const x = a.toLowerCase(), y = b.toLowerCase();
       return 1 - editDistance(x, y, 12) / Math.max(x.length, y.length, 1);
     }
-    function makeOptions(correct) {
+    function makeOptions(correct, difficulty = "moyen") {
       const seen = new Set([pairKey(correct.past, correct.participle)]);
       const candidates = verbs.filter(v => v.infinitive !== correct.infinitive && !seen.has(pairKey(v.past, v.participle)));
       const ranked = candidates.map(v => {
@@ -443,7 +482,13 @@
         const sim = (distanceRatio(v.past, correct.past) + distanceRatio(v.participle, correct.participle)) / 2;
         return { v, weight: 1 + exact * 4 + sim * 2 };
       }).sort((a, b) => b.weight - a.weight);
-      const pool = ranked.slice(0, Math.min(11, ranked.length));
+      const pools = {
+        facile: ranked.slice(-12),
+        moyen: ranked.slice(3, 15),
+        dur: ranked.slice(0, 10),
+        ultime: ranked.slice(0, 6)
+      };
+      const pool = [...(pools[difficulty] || pools.moyen)];
       const picks = [];
       while (picks.length < 3 && pool.length) {
         const sum = pool.reduce((n, item) => n + item.weight, 0);
@@ -486,11 +531,17 @@
         return { verb: v.infinitive, quiz: mode === "review" && !r.quiz, translation: !r.translation };
       }).filter(plan => plan.quiz || plan.translation);
     }
-    function startMode(mode) {
+    function startMode(mode, difficulty) {
+      if ((mode === "training" || mode === "random") && !difficulty) {
+        state.pendingMode = mode;
+        $("difficulty-backdrop").hidden = false;
+        return;
+      }
+      $("difficulty-backdrop").hidden = true;
       if (mode === "training" || mode === "random") state.records = emptyRecords();
       const queue = makeQueue(mode);
       if (!queue.length) return;
-      state.active = { mode, queue, index: 0, stage: queue[0].quiz ? "quiz" : "translation" };
+      state.active = { mode, difficulty: difficulty || "moyen", queue, index: 0, stage: queue[0].quiz ? "quiz" : "translation" };
       state.checkpoint = copySession(state.active);
       state.feedback = null; state.selectedOption = null; state.options = [];
       persist(); setView("quiz"); renderQuestion();
@@ -516,13 +567,14 @@
       const a = state.active, plan = currentPlan(), verb = byId[plan.verb], c = counts();
       if (!plan) { finishRun(); return; }
       const progress = progressInfo();
-      $("mode-badge").textContent = modeNames[a.mode] || modeNames.training;
+      const levelName = { facile: "Facile", moyen: "Moyen", dur: "Dur", ultime: "Ultime MAKHLOUF" }[a.difficulty] || "Moyen";
+      $("mode-badge").textContent = `${modeNames[a.mode] || modeNames.training} · ${levelName}`;
       $("step-label").textContent = `Verbe ${a.index + 1} sur ${a.queue.length}`;
       $("step-percent").textContent = `${progress.percentage} %`;
       $("quiz-progress-fill").style.width = `${progress.percentage}%`;
       $("quiz-score").textContent = `${c.quiz}/20`; $("translation-score").textContent = `${c.translation}/20`;
       if (a.stage === "quiz") {
-        state.options = makeOptions(verb); state.feedback = null; state.selectedOption = null;
+        state.options = makeOptions(verb, a.difficulty); state.feedback = null; state.selectedOption = null;
         $("question-card").innerHTML = `<div class="eyebrow"><span class="tiny-spark">✳</span> question ${String(a.index + 1).padStart(2, "0")} · formes anglaises</div>
           <h1>${verb.infinitive}</h1><p class="question-hint">Choisis le prétérit et le participe passé qui correspondent à cet infinitif.</p>
           <div class="option-list">${state.options.map((o, i) => `<button class="option" data-option="${i}" aria-label="Réponse ${String.fromCharCode(65 + i)} : ${o.past}, ${o.participle}"><span class="option-letter">${String.fromCharCode(65 + i)}</span><span class="option-text">${o.past}<span style="color:#a4ada6;font-weight:450"> — </span>${o.participle}</span></button>`).join("")}</div>
@@ -599,11 +651,17 @@
       const revisit = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
       const notMastered = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
       const title = mastered.length === 20 ? "Tout est maîtrisé !" : mastered.length >= 14 ? "Très belle progression !" : mastered.length >= 7 ? "Les bases se construisent." : "Chaque essai te fait avancer.";
+      const qcmCrown = c.quiz > 18, translationCrown = c.translation > 18;
+      const crownArt = '<svg class="crown-art" viewBox="0 0 64 64" role="img" aria-label="Couronne dorée"><path d="M9 47h46l-4-27-13 11-6-20-8 20-13-11-2 27Z" fill="#e8b83c" stroke="#a87814" stroke-width="2.5" stroke-linejoin="round"/><path d="M13 51h38" stroke="#a87814" stroke-width="4" stroke-linecap="round"/><circle cx="9" cy="18" r="4" fill="#f8df7a"/><circle cx="55" cy="17" r="4" fill="#f8df7a"/><circle cx="32" cy="9" r="4" fill="#f8df7a"/></svg>';
+      const award = qcmCrown || translationCrown;
+      const awardTitle = qcmCrown && translationCrown ? "Double couronne ! Ultime MAKHLOUF !" : qcmCrown ? "Couronne du QCM !" : "Couronne des traductions !";
+      const awardText = [qcmCrown ? `QCM : ${c.quiz}/20` : "", translationCrown ? `Traduction : ${c.translation}/20` : ""].filter(Boolean).join(" · ");
       const tableRows = verbs.map(v => {
         const r = state.records[v.infinitive];
         return `<tr><td>${v.infinitive}</td><td>${v.past}</td><td>${v.participle}</td><td>${v.translation}</td><td>${statusCell(r.quiz)}</td><td>${statusCell(r.translation)}</td></tr>`;
       }).join("");
       $("results-content").innerHTML = `<div class="result-hero"><div class="eyebrow"><span class="tiny-spark">✳</span> séance terminée</div><h1>${title}</h1><p>Voici où tu en es sur les 20 verbes. Tu peux refaire un parcours ou cibler ce qui mérite encore un peu de pratique.</p>
+        ${award ? `<div class="crown-award">${crownArt}<div><strong>${awardTitle}</strong><span>${awardText} — tu as dépassé 18/20 !</span></div></div>` : ""}
         <div class="final-score"><div class="score-total">${c.quiz + c.translation}<small>/40</small></div><div class="score-breakdown"><span>QCM <b>${c.quiz} / 20</b></span><span>Traductions <b>${c.translation} / 20</b></span></div></div>
         <div class="result-actions"><button class="primary-button" id="restart-button">Recommencer les 20 verbes <span aria-hidden="true">↻</span></button><button class="secondary-button" id="retry-errors" ${revisit.length ? "" : "disabled"}>Réviser les erreurs${revisit.length ? ` · ${revisit.length}` : ""}</button><button class="secondary-button" id="retry-translations" ${verbs.some(v => !state.records[v.infinitive].translation) ? "" : "disabled"}>Refaire les traductions ratées</button></div></div>
         <div class="result-sections"><div class="result-stat"><small>Verbes maîtrisés</small><strong>${mastered.length} sur 20</strong><p>${mastered.length ? mastered.map(v => v.infinitive).join(" · ") : "Aucun pour l'instant."}</p></div><div class="result-stat"><small>À retravailler</small><strong>${notMastered.length} sur 20</strong><p>${notMastered.length ? notMastered.map(v => v.infinitive).join(" · ") : "Tout est réussi."}</p></div></div>
@@ -616,6 +674,10 @@
       $("results-home").addEventListener("click", () => { setView("home"); renderHomeStats(); });
     }
     document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => startMode(button.dataset.mode)));
+    document.querySelectorAll("[data-difficulty]").forEach(button => button.addEventListener("click", () => {
+      const mode = state.pendingMode || "training"; state.pendingMode = null; startMode(mode, button.dataset.difficulty);
+    }));
+    $("difficulty-cancel").addEventListener("click", () => { state.pendingMode = null; $("difficulty-backdrop").hidden = true; });
     $("resume-button").addEventListener("click", resume);
     $("leave-button").addEventListener("click", () => {
       if (state.feedback && !state.checkpoint) { finishRun(); return; }
