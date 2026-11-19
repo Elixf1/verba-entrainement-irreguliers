@@ -160,6 +160,17 @@
     .crown-art { flex: none; width: 54px; height: 54px; filter: drop-shadow(0 5px 5px rgba(152,107,16,.2)); animation: crown-bob 1.5s ease-in-out infinite alternate; }
     .crown-award strong { display: block; margin-bottom: 3px; color: #795414; font-size: 15px; }
     .crown-award span { color: #927841; font-size: 12px; line-height: 1.45; }
+    .achievement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .achievement-card { display: flex; align-items: center; gap: 12px; min-height: 86px; padding: 13px 15px; border: 1px solid #e8ebe7; border-radius: 16px; background: #fff; animation: crown-pop .55s cubic-bezier(.2,.85,.25,1.2) both; }
+    .achievement-card:nth-child(2) { animation-delay: .12s; }
+    .achievement-art { flex: none; width: 52px; height: 52px; }
+    .achievement-card strong,.achievement-card span { display: block; }
+    .achievement-card strong { margin-bottom: 3px; color: var(--ink); font-size: 14px; }
+    .achievement-card span { color: var(--muted); font-size: 11px; }
+    .achievement-crown { border-color: #f0dc9d; background: #fffaf0; }
+    .achievement-silver { border-color: #d6dce4; background: #f7f9fc; }
+    .achievement-bronze { border-color: #e7c5a9; background: #fff8f2; }
+    .achievement-cry { border-color: #ead9d9; background: #fff7f7; }
     @keyframes crown-pop { from { opacity:0; transform:translateY(18px) scale(.9) } to { opacity:1; transform:translateY(0) scale(1) } }
     @keyframes crown-bob { to { transform:translateY(-5px) rotate(5deg) } }
     .final-score { display: flex; align-items: center; gap: 14px; margin-top: 26px; }
@@ -232,6 +243,7 @@
       .final-score { align-items: flex-start; flex-direction: column; }
       .score-breakdown { gap: 7px; }
       .result-sections { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .achievement-grid { grid-template-columns: 1fr; }
       .result-stat { padding: 15px 13px; }
       .result-stat strong { font-size: 15px; }
       .recap-heading { align-items: flex-start; flex-direction: column; }
@@ -475,28 +487,37 @@
       return 1 - editDistance(x, y, 12) / Math.max(x.length, y.length, 1);
     }
     function makeOptions(correct, difficulty = "moyen") {
-      const seen = new Set([pairKey(correct.past, correct.participle)]);
-      const candidates = verbs.filter(v => v.infinitive !== correct.infinitive && !seen.has(pairKey(v.past, v.participle)));
-      const ranked = candidates.map(v => {
-        const exact = Number(v.past === correct.past) + Number(v.participle === correct.participle);
-        const sim = (distanceRatio(v.past, correct.past) + distanceRatio(v.participle, correct.participle)) / 2;
-        return { v, weight: 1 + exact * 4 + sim * 2 };
-      }).sort((a, b) => b.weight - a.weight);
-      const pools = {
-        facile: ranked.slice(-12),
-        moyen: ranked.slice(3, 15),
-        dur: ranked.slice(0, 10),
-        ultime: ranked.slice(0, 6)
-      };
-      const pool = [...(pools[difficulty] || pools.moyen)];
-      const picks = [];
-      while (picks.length < 3 && pool.length) {
-        const sum = pool.reduce((n, item) => n + item.weight, 0);
-        let roll = Math.random() * sum, chosen = pool.length - 1;
-        for (let i = 0; i < pool.length; i++) { roll -= pool[i].weight; if (roll <= 0) { chosen = i; break; } }
-        picks.push(pool.splice(chosen, 1)[0].v);
+      const correctKey = pairKey(correct.past, correct.participle);
+      const validPairs = [...new Map(verbs.map(v => [pairKey(v.past, v.participle), { past: v.past, participle: v.participle }])).values()]
+        .filter(pair => pairKey(pair.past, pair.participle) !== correctKey)
+        .map(pair => ({ ...pair, similarity: (distanceRatio(pair.past, correct.past) + distanceRatio(pair.participle, correct.participle)) / 2 }));
+      const ranked = validPairs.sort((a, b) => b.similarity - a.similarity);
+      const take = (items, n) => shuffled(items).slice(0, n);
+      let picks;
+      if (difficulty === "facile") {
+        // The distractors use real pairs from the list, chosen from its least similar half.
+        picks = take(ranked.slice(Math.floor(ranked.length / 2)), 3);
+      } else if (difficulty === "moyen") {
+        // One close pair plus two middle-distance pairs make this a step above easy.
+        picks = [...take(ranked.slice(0, 5), 1), ...take(ranked.slice(5, 14), 2)];
+      } else if (difficulty === "dur") {
+        // All three distractors are the closest complete pairs in the supplied list.
+        picks = take(ranked.slice(0, 3), 3);
+      } else {
+        // Ultimate reuses only listed English forms, but recombines them into near-miss pairs.
+        const pasts = [...new Set(verbs.map(v => v.past))];
+        const participles = [...new Set(verbs.map(v => v.participle))];
+        const nearMisses = [];
+        for (const past of pasts) for (const participle of participles) {
+          if (pairKey(past, participle) === correctKey) continue;
+          const pastSimilarity = distanceRatio(past, correct.past);
+          const participleSimilarity = distanceRatio(participle, correct.participle);
+          nearMisses.push({ past, participle, similarity: (pastSimilarity + participleSimilarity) / 2 + (past === correct.past || participle === correct.participle ? .35 : 0) });
+        }
+        nearMisses.sort((a, b) => b.similarity - a.similarity);
+        picks = take(nearMisses.slice(0, 8), 3);
       }
-      return shuffled([{ past: correct.past, participle: correct.participle, correct: true }, ...picks.map(v => ({ past: v.past, participle: v.participle, correct: false }))]);
+      return shuffled([{ past: correct.past, participle: correct.participle, correct: true }, ...picks.map(pair => ({ past: pair.past, participle: pair.participle, correct: false }))]);
     }
     function persist() {
       try { localStorage.setItem(storeKey, JSON.stringify({ records: state.records, active: state.checkpoint })); } catch (_) { /* Session still works if storage is unavailable. */ }
@@ -651,17 +672,22 @@
       const revisit = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
       const notMastered = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
       const title = mastered.length === 20 ? "Tout est maîtrisé !" : mastered.length >= 14 ? "Très belle progression !" : mastered.length >= 7 ? "Les bases se construisent." : "Chaque essai te fait avancer.";
-      const qcmCrown = c.quiz > 18, translationCrown = c.translation > 18;
-      const crownArt = '<svg class="crown-art" viewBox="0 0 64 64" role="img" aria-label="Couronne dorée"><path d="M9 47h46l-4-27-13 11-6-20-8 20-13-11-2 27Z" fill="#e8b83c" stroke="#a87814" stroke-width="2.5" stroke-linejoin="round"/><path d="M13 51h38" stroke="#a87814" stroke-width="4" stroke-linecap="round"/><circle cx="9" cy="18" r="4" fill="#f8df7a"/><circle cx="55" cy="17" r="4" fill="#f8df7a"/><circle cx="32" cy="9" r="4" fill="#f8df7a"/></svg>';
-      const award = qcmCrown || translationCrown;
-      const awardTitle = qcmCrown && translationCrown ? "Double couronne ! Ultime MAKHLOUF !" : qcmCrown ? "Couronne du QCM !" : "Couronne des traductions !";
-      const awardText = [qcmCrown ? `QCM : ${c.quiz}/20` : "", translationCrown ? `Traduction : ${c.translation}/20` : ""].filter(Boolean).join(" · ");
+      const awardFor = score => {
+        if (score >= 18) return { tier: "Couronne", style: "crown", art: '<svg class="achievement-art" viewBox="0 0 64 64" role="img" aria-label="Couronne dorée"><path d="M9 47h46l-4-27-13 11-6-20-8 20-13-11-2 27Z" fill="#e8b83c" stroke="#a87814" stroke-width="2.5" stroke-linejoin="round"/><path d="M13 51h38" stroke="#a87814" stroke-width="4" stroke-linecap="round"/><circle cx="9" cy="18" r="4" fill="#f8df7a"/><circle cx="55" cy="17" r="4" fill="#f8df7a"/><circle cx="32" cy="9" r="4" fill="#f8df7a"/></svg>' };
+        if (score >= 16) return { tier: "Médaille d’argent", style: "silver", art: '<svg class="achievement-art" viewBox="0 0 64 64" role="img" aria-label="Médaille d’argent"><path d="m18 5 14 8 14-8v22H18V5Z" fill="#8295ae"/><circle cx="32" cy="36" r="19" fill="#dce3eb" stroke="#8190a1" stroke-width="3"/><circle cx="32" cy="36" r="12" fill="#f7f9fc" stroke="#abb7c5" stroke-width="2"/><path d="m32 27 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L32 27Z" fill="#8493a6"/></svg>' };
+        if (score >= 13) return { tier: "Médaille de bronze", style: "bronze", art: '<svg class="achievement-art" viewBox="0 0 64 64" role="img" aria-label="Médaille de bronze"><path d="m18 5 14 8 14-8v22H18V5Z" fill="#bd8051"/><circle cx="32" cy="36" r="19" fill="#e9c29f" stroke="#ad7044" stroke-width="3"/><circle cx="32" cy="36" r="12" fill="#fff8f1" stroke="#d6a47f" stroke-width="2"/><path d="m32 27 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L32 27Z" fill="#b87b50"/></svg>' };
+        return { tier: "On s’accroche !", style: "cry", art: '<svg class="achievement-art" viewBox="0 0 64 64" role="img" aria-label="Visage qui pleure"><circle cx="32" cy="31" r="23" fill="#ffd96c" stroke="#d59d3b" stroke-width="2.5"/><path d="M22 26h3m14 0h3" stroke="#55422c" stroke-width="4" stroke-linecap="round"/><path d="M20 32c1 7 4 9 6 6m18-6c-1 7-4 9-6 6" fill="#79c8ef" stroke="#439bc7" stroke-width="1.5"/><path d="M25 45c3-6 11-6 14 0" fill="none" stroke="#704936" stroke-width="3" stroke-linecap="round"/><path d="M19 26c2-3 5-4 8-2m10 0c3-2 6-1 8 2" fill="none" stroke="#704936" stroke-width="2.5" stroke-linecap="round"/></svg>' };
+      };
+      const rewardCard = (label, score) => {
+        const reward = awardFor(score);
+        return `<div class="achievement-card achievement-${reward.style}">${reward.art}<div><strong>${reward.tier}</strong><span>${label} · ${score}/20</span></div></div>`;
+      };
       const tableRows = verbs.map(v => {
         const r = state.records[v.infinitive];
         return `<tr><td>${v.infinitive}</td><td>${v.past}</td><td>${v.participle}</td><td>${v.translation}</td><td>${statusCell(r.quiz)}</td><td>${statusCell(r.translation)}</td></tr>`;
       }).join("");
       $("results-content").innerHTML = `<div class="result-hero"><div class="eyebrow"><span class="tiny-spark">✳</span> séance terminée</div><h1>${title}</h1><p>Voici où tu en es sur les 20 verbes. Tu peux refaire un parcours ou cibler ce qui mérite encore un peu de pratique.</p>
-        ${award ? `<div class="crown-award">${crownArt}<div><strong>${awardTitle}</strong><span>${awardText} — tu as dépassé 18/20 !</span></div></div>` : ""}
+        <div class="achievement-grid" aria-label="Récompenses par épreuve">${rewardCard("QCM", c.quiz)}${rewardCard("Traduction", c.translation)}</div>
         <div class="final-score"><div class="score-total">${c.quiz + c.translation}<small>/40</small></div><div class="score-breakdown"><span>QCM <b>${c.quiz} / 20</b></span><span>Traductions <b>${c.translation} / 20</b></span></div></div>
         <div class="result-actions"><button class="primary-button" id="restart-button">Recommencer les 20 verbes <span aria-hidden="true">↻</span></button><button class="secondary-button" id="retry-errors" ${revisit.length ? "" : "disabled"}>Réviser les erreurs${revisit.length ? ` · ${revisit.length}` : ""}</button><button class="secondary-button" id="retry-translations" ${verbs.some(v => !state.records[v.infinitive].translation) ? "" : "disabled"}>Refaire les traductions ratées</button></div></div>
         <div class="result-sections"><div class="result-stat"><small>Verbes maîtrisés</small><strong>${mastered.length} sur 20</strong><p>${mastered.length ? mastered.map(v => v.infinitive).join(" · ") : "Aucun pour l'instant."}</p></div><div class="result-stat"><small>À retravailler</small><strong>${notMastered.length} sur 20</strong><p>${notMastered.length ? notMastered.map(v => v.infinitive).join(" · ") : "Tout est réussi."}</p></div></div>
