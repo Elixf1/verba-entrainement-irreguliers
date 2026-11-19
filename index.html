@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f4">
+  <meta name="description" content="Une application interactive pour mémoriser 20 verbes irréguliers anglais.">
+  <title>Verba — les verbes irréguliers anglais</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f6f7f4;
+      --card: #fff;
+      --ink: #17231e;
+      --muted: #77817b;
+      --line: #e5e9e4;
+      --green: #216b4b;
+      --green-dark: #19583d;
+      --mint: #e9f4ed;
+      --lime: #c9ed91;
+      --amber: #bf7627;
+      --amber-bg: #fff5e8;
+      --red: #b65044;
+      --red-bg: #fff0ed;
+      --shadow: 0 18px 54px rgba(33, 56, 43, .07);
+      --radius: 22px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 3px solid rgba(33, 107, 75, .28); outline-offset: 3px; }
+    .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 25px 0 52px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 46px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; font-weight: 760; letter-spacing: -.04em; font-size: 21px; }
+    .brand-mark { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 12px; background: var(--green); color: #fff; }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .top-note { display: flex; align-items: center; gap: 8px; color: #68746c; font-size: 13px; font-weight: 550; }
+    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #76b77f; box-shadow: 0 0 0 4px #e7f2e8; }
+    .screen[hidden] { display: none !important; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--green); text-transform: uppercase; letter-spacing: .13em; font-size: 11px; font-weight: 780; }
+    .eyebrow .tiny-spark { color: #a0c76b; font-size: 17px; line-height: 1; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 15px; font-size: clamp(38px, 5.6vw, 64px); line-height: 1.02; letter-spacing: -.065em; font-weight: 760; }
+    h1 em { color: var(--green); font-style: normal; }
+    .lead { max-width: 540px; margin-bottom: 0; color: var(--muted); font-size: 16px; line-height: 1.65; }
+    .hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.22fr) minmax(280px, .78fr); align-items: center; gap: 36px; padding: 46px 50px; border: 1px solid #e5ebe4; border-radius: 30px; background: linear-gradient(120deg, #fbfcf9 0%, #f0f5ee 100%); }
+    .hero:after { position: absolute; content: ""; width: 390px; height: 390px; right: -118px; top: -174px; border: 1px solid rgba(40, 105, 73, .1); border-radius: 50%; box-shadow: 0 0 0 34px rgba(40,105,73,.025), 0 0 0 71px rgba(40,105,73,.025); pointer-events: none; }
+    .hero-copy, .hero-art { position: relative; z-index: 1; }
+    .hero-copy h1 { margin-top: 17px; }
+    .hero-art { min-height: 238px; display: grid; place-items: center; }
+    .study-card { position: relative; width: min(310px, 100%); padding: 23px 24px 21px; border: 1px solid rgba(255,255,255,.8); border-radius: 22px; background: rgba(255,255,255,.91); box-shadow: 0 20px 50px rgba(37, 78, 54, .14); transform: rotate(3deg); }
+    .study-card:before { content: ""; position: absolute; z-index: -1; width: 100%; height: 100%; left: -13px; top: 9px; border: 1px solid #dce9dc; border-radius: 22px; background: rgba(234, 243, 232, .8); transform: rotate(-8deg); }
+    .study-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+    .study-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--mint); color: var(--green); font-size: 12px; }
+    .study-verb { margin-bottom: 13px; color: var(--green); font-size: 32px; font-weight: 770; letter-spacing: -.06em; }
+    .study-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .study-form { padding-top: 10px; border-top: 1px solid var(--line); }
+    .study-form span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10px; }
+    .study-form strong { font-size: 14px; }
+    .study-sticker { position: absolute; display: grid; place-items: center; width: 54px; height: 54px; right: -23px; bottom: 9px; border-radius: 17px; background: var(--lime); color: #385524; font-size: 24px; transform: rotate(-9deg); box-shadow: 0 8px 18px rgba(61, 102, 32, .15); }
+    .stat-row { display: flex; align-items: center; gap: 23px; margin-top: 29px; color: #58645c; font-size: 13px; font-weight: 580; }
+    .stat-item { display: inline-flex; align-items: center; gap: 8px; }
+    .stat-icon { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; background: #e8f0e7; color: var(--green); font-size: 13px; font-weight: 800; }
+    .stat-sep { width: 1px; height: 23px; background: #dce3dc; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 47px 0 19px; }
+    .section-heading h2 { margin: 7px 0 0; font-size: 22px; letter-spacing: -.04em; }
+    .section-caption { margin: 0; color: var(--muted); font-size: 13px; }
+    .mode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .mode-card { position: relative; display: flex; min-height: 196px; flex-direction: column; align-items: flex-start; padding: 21px 19px 18px; border: 1px solid var(--line); border-radius: 19px; background: var(--card); color: var(--ink); text-align: left; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+    .mode-card:not(:disabled):hover { transform: translateY(-3px); border-color: #b9d3bf; box-shadow: 0 12px 28px rgba(42, 76, 52, .08); }
+    .mode-card:disabled { cursor: not-allowed; opacity: .53; }
+    .mode-icon { display: grid; place-items: center; width: 39px; height: 39px; margin-bottom: 18px; border-radius: 12px; background: var(--mint); color: var(--green); }
+    .mode-icon svg { width: 20px; height: 20px; }
+    .mode-card:nth-child(2) .mode-icon { background: #f0effa; color: #7164a3; }
+    .mode-card:nth-child(3) .mode-icon { background: #fff2e3; color: #aa6c28; }
+    .mode-card:nth-child(4) .mode-icon { background: #edf2f7; color: #53708e; }
+    .mode-card strong { display: block; margin-bottom: 7px; font-size: 15px; letter-spacing: -.02em; }
+    .mode-card small { max-width: 210px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .mode-arrow { position: absolute; right: 18px; bottom: 19px; color: #8a978f; font-size: 18px; }
+    .saved-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 19px; padding: 17px 19px; border: 1px solid #deeadf; border-radius: 16px; background: #eff6ef; }
+    .saved-panel[hidden] { display: none; }
+    .saved-panel p { margin: 0; color: #536357; font-size: 13px; }
+    .text-button { flex: none; border: 0; background: transparent; color: var(--green); font-weight: 720; font-size: 13px; }
+    .dashboard-strip { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 28px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+    .dash-label { margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 680; letter-spacing: .09em; text-transform: uppercase; }
+    .dash-score { font-size: 17px; font-weight: 740; letter-spacing: -.03em; }
+    .dash-score span { padding: 0 6px; color: #bdc5bf; font-weight: 450; }
+    .dash-progress { width: min(250px, 32%); }
+    .progress-meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+    .progress-track { height: 7px; overflow: hidden; border-radius: 99px; background: #edf0ed; }
+    .progress-fill { height: 100%; width: 0%; border-radius: 99px; background: var(--green); transition: width .25s ease; }
+    .footnote { margin: 25px 0 0; color: #98a19a; text-align: center; font-size: 11px; }
+    .quiz-wrap { width: min(760px, 100%); margin: 0 auto; }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -5px 0 17px; }
+    .back-button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 0; border: 0; background: transparent; color: #68746c; font-size: 13px; font-weight: 620; }
+    .back-button:hover { color: var(--green); }
+    .mode-badge { padding: 8px 12px; border: 1px solid var(--line); border-radius: 99px; background: #fff; color: #657168; font-size: 11px; font-weight: 650; }
+    .quiz-progress { margin-bottom: 28px; }
+    .quiz-progress-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 9px; color: var(--muted); font-size: 12px; }
+    .quiz-progress .progress-track { height: 6px; }
+    .score-row { display: flex; gap: 10px; margin-bottom: 24px; }
+    .score-pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: #68746c; font-size: 12px; font-weight: 600; }
+    .score-pill b { color: var(--ink); font-size: 13px; }
+    .score-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .score-pill.translation .score-dot { background: #987ac1; }
+    .question-card { padding: 36px 40px 35px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: var(--shadow); }
+    .question-card .eyebrow { margin-bottom: 13px; }
+    .question-card h1 { margin-bottom: 9px; font-size: clamp(34px, 6vw, 46px); text-transform: lowercase; }
+    .question-hint { margin-bottom: 25px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .option-list { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .option { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 15px; border: 1px solid #e5eae5; border-radius: 14px; background: #fff; color: var(--ink); text-align: left; transition: border-color .15s ease, background .15s ease, transform .15s ease; }
+    .option:not(:disabled):hover { transform: translateY(-1px); border-color: #a9c7b1; background: #fbfdfb; }
+    .option:disabled { cursor: default; }
+    .option-letter { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border: 1px solid #e7ebe7; border-radius: 10px; color: #758079; font-size: 12px; font-weight: 740; }
+    .option-text { font-size: 15px; font-weight: 660; letter-spacing: -.02em; }
+    .option.is-correct { border-color: #a4d1ad; background: #f0f8f1; }
+    .option.is-correct .option-letter { border-color: #b5d7bb; background: #dff0e1; color: var(--green); }
+    .option.is-wrong { border-color: #e6b7b0; background: #fff7f5; }
+    .option.is-wrong .option-letter { border-color: #edcbc5; background: #ffebe7; color: var(--red); }
+    .feedback { display: flex; align-items: flex-start; gap: 12px; margin-top: 18px; padding: 15px 17px; border: 1px solid; border-radius: 14px; }
+    .feedback[hidden] { display: none; }
+    .feedback.good { border-color: #cce5ce; background: #f1f8f1; color: #286d45; }
+    .feedback.bad { border-color: #f0d3c3; background: #fff8ef; color: #985d2a; }
+    .feedback-mark { flex: none; display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,.8); font-size: 13px; font-weight: 800; }
+    .feedback-copy strong { display: block; margin: 1px 0 4px; font-size: 13px; }
+    .feedback-copy p { margin: 0; font-size: 12px; line-height: 1.5; }
+    .card-actions { display: flex; justify-content: flex-end; margin-top: 21px; }
+    .primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 10px; min-height: 47px; padding: 0 20px; border: 0; border-radius: 13px; background: var(--green); color: #fff; font-size: 13px; font-weight: 710; transition: background .15s ease, transform .15s ease; }
+    .primary-button:hover:not(:disabled) { transform: translateY(-1px); background: var(--green-dark); }
+    .primary-button:disabled { cursor: not-allowed; opacity: .5; }
+    .translation-form { display: flex; gap: 10px; }
+    .translation-input { width: 100%; min-height: 54px; padding: 0 16px; border: 1px solid #dfe6df; border-radius: 13px; background: #fff; color: var(--ink); font-size: 15px; }
+    .translation-input::placeholder { color: #a0aaa2; }
+    .translation-submit { min-height: 54px; white-space: nowrap; }
+    .translation-foot { margin: 10px 0 0; color: #929c94; font-size: 11px; }
+    .result-wrap { width: min(900px, 100%); margin: 0 auto; }
+    .result-hero { padding: 37px 40px; border: 1px solid #e1ebe0; border-radius: 25px; background: linear-gradient(120deg, #f4f8ef, #edf5ec); }
+    .result-hero h1 { margin: 10px 0 10px; font-size: clamp(34px, 5vw, 48px); }
+    .result-hero p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+    .final-score { display: flex; align-items: center; gap: 14px; margin-top: 26px; }
+    .score-total { display: grid; place-items: center; width: 80px; height: 80px; border: 1px solid rgba(33,107,75,.15); border-radius: 22px; background: #fff; color: var(--green); font-size: 25px; font-weight: 790; letter-spacing: -.05em; }
+    .score-total small { display: block; margin-top: -14px; color: #8c978f; font-size: 10px; font-weight: 650; letter-spacing: .1em; }
+    .score-breakdown { display: flex; flex-wrap: wrap; gap: 9px; }
+    .score-breakdown span { padding: 9px 11px; border: 1px solid rgba(33,107,75,.12); border-radius: 10px; background: rgba(255,255,255,.75); color: #617069; font-size: 12px; }
+    .score-breakdown b { color: var(--ink); }
+    .result-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 19px; }
+    .secondary-button { min-height: 44px; padding: 0 15px; border: 1px solid #dce5dd; border-radius: 12px; background: #fff; color: var(--green); font-size: 12px; font-weight: 690; }
+    .secondary-button:hover:not(:disabled) { border-color: #aecbb4; background: #f9fcf9; }
+    .secondary-button:disabled { cursor: not-allowed; opacity: .5; }
+    .result-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+    .result-stat { padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+    .result-stat small { display: block; margin-bottom: 10px; color: var(--muted); font-size: 11px; font-weight: 690; letter-spacing: .08em; text-transform: uppercase; }
+    .result-stat strong { font-size: 18px; letter-spacing: -.03em; }
+    .result-stat p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .recap-heading { display: flex; justify-content: space-between; align-items: end; gap: 14px; margin: 33px 0 13px; }
+    .recap-heading h2 { margin: 0; font-size: 20px; letter-spacing: -.04em; }
+    .recap-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+    .recap-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+    .recap-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .recap-table th { padding: 13px 15px; background: #f8faf7; color: #78837b; font-size: 10px; font-weight: 720; letter-spacing: .08em; text-transform: uppercase; }
+    .recap-table td { padding: 13px 15px; border-top: 1px solid #eef1ee; color: #445148; white-space: nowrap; }
+    .recap-table td:first-child { color: var(--ink); font-weight: 740; text-transform: lowercase; }
+    .status-ok { color: var(--green) !important; font-weight: 700; }
+    .status-no { color: var(--red) !important; font-weight: 700; }
+    .status-pending { color: #929b94 !important; }
+    .result-bottom { display: flex; justify-content: center; margin-top: 24px; }
+    .empty-note { padding: 24px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 850px) {
+      .hero { grid-template-columns: 1fr minmax(240px, .75fr); padding: 37px 34px; gap: 17px; }
+      .mode-grid { grid-template-columns: repeat(2, 1fr); }
+      .mode-card { min-height: 174px; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 30px, 520px); padding-top: 16px; }
+      .topbar { margin-bottom: 23px; }
+      .top-note { font-size: 11px; }
+      .hero { display: block; padding: 28px 24px 19px; border-radius: 23px; }
+      .hero-copy h1 { margin-top: 13px; }
+      .lead { font-size: 14px; }
+      .hero-art { min-height: 205px; margin-top: 10px; }
+      .study-card { width: min(292px, 84%); padding: 19px 21px; }
+      .study-head { margin-bottom: 17px; }
+      .study-verb { font-size: 28px; }
+      .stat-row { flex-wrap: wrap; gap: 11px 14px; margin-top: 21px; font-size: 11px; }
+      .stat-sep { display: none; }
+      .section-heading { align-items: flex-start; flex-direction: column; margin-top: 35px; }
+      .mode-grid { gap: 10px; }
+      .mode-card { min-height: 169px; padding: 17px 15px; }
+      .mode-icon { width: 35px; height: 35px; margin-bottom: 15px; }
+      .mode-card strong { font-size: 13px; }
+      .mode-card small { font-size: 11px; }
+      .mode-arrow { right: 13px; bottom: 15px; }
+      .dashboard-strip { align-items: flex-start; flex-direction: column; gap: 16px; padding: 17px; }
+      .dash-progress { width: 100%; }
+      .quiz-top { margin-bottom: 16px; }
+      .quiz-progress { margin-bottom: 21px; }
+      .question-card { padding: 27px 20px 22px; border-radius: 20px; }
+      .score-row { gap: 7px; margin-bottom: 17px; }
+      .score-pill { gap: 6px; padding: 8px 10px; font-size: 11px; }
+      .question-hint { margin-bottom: 20px; font-size: 13px; }
+      .option-list { grid-template-columns: 1fr; gap: 9px; }
+      .option { min-height: 58px; }
+      .translation-form { flex-direction: column; }
+      .translation-submit { width: 100%; }
+      .result-hero { padding: 28px 22px; }
+      .final-score { align-items: flex-start; flex-direction: column; }
+      .score-breakdown { gap: 7px; }
+      .result-sections { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .result-stat { padding: 15px 13px; }
+      .result-stat strong { font-size: 15px; }
+      .recap-heading { align-items: flex-start; flex-direction: column; }
+      .recap-table { min-width: 670px; }
+      .result-actions { display: grid; grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#accueil" aria-label="Verba, accueil">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6.5c2.4-1.4 5.1-1.4 7.5 0v12c-2.4-1.4-5.1-1.4-7.5 0v-12Zm12 0c-1.4-.8-2.9-1.1-4.5-.9v12c1.6-.2 3.1.1 4.5.9v-12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 10h1.8M9 13h1.8m4.2-2.7h1.1m-1.1 3h1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        <span>verba<span style="color:#8fa38f">.</span></span>
+      </a>
+      <div class="top-note"><span class="online-dot"></span> Ton espace d'entraînement</div>
+    </header>
+
+    <main>
+      <section id="home" class="screen">
+        <div class="hero">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="tiny-spark">✳</span> anglais · verbes irréguliers</div>
+            <h1>Les bons réflexes,<br><em>un verbe à la fois.</em></h1>
+            <p class="lead">Entraîne-toi à reconnaître les formes et à retrouver leur sens. Quelques minutes suffisent pour mieux les retenir.</p>
+            <div class="stat-row">
+              <span class="stat-item"><span class="stat-icon">↗</span> 20 verbes essentiels</span>
+              <span class="stat-sep"></span>
+              <span class="stat-item"><span class="stat-icon">◷</span> à ton rythme</span>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="study-card">
+              <div class="study-head"><span>À retenir</span><span class="study-number">01</span></div>
+              <div class="study-verb">awake</div>
+              <div class="study-forms">
+                <div class="study-form"><span>Prétérit</span><strong>awoke</strong></div>
+                <div class="study-form"><span>Participe passé</span><strong>awoken</strong></div>
+              </div>
+              <div class="study-sticker">✦</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <div><div class="eyebrow">Choisis ton parcours</div><h2>Comment veux-tu t'entraîner ?</h2></div>
+          <p class="section-caption">Tu peux avancer à ton rythme, sans limite de temps.</p>
+        </div>
+        <div class="mode-grid">
+          <button class="mode-card" data-mode="training">
+            <span class="mode-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.8A2.8 2.8 0 0 1 7.8 3H20v17H7.8A2.8 2.8 0 0 1 5 17.2V5.8Z" stroke="currentColor" stroke-width="1.7"/><path d="M5 17.2A2.8 2.8 0 0 1 7.8 14.4H20M9 7h7m-7 3h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+            <strong>Entraînement complet</strong><small>Les 20 verbes, avec QCM et traduction.</small><span class="mode-arrow">↗</span>
+          </button>
+          <button class="mode-card" data-mode="random">
+            <span class="mode-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M17 3h4v4M3 7h2.5c5.2 0 7.8 10 13 10H21m-4 4h4v-4M3 17h2.5c1.6 0 2.9-1.1 4-2.7M14.5 9.7C15.6 8.1 16.9 7 18 7h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <strong>Dans le désordre</strong><small>Les 20 verbes dans un nouvel ordre à chaque fois.</small><span class="mode-arrow">↗</span>
+          </button>
+          <button class="mode-card" data-mode="review" id="review-mode">
+            <span class="mode-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M20 11.5A8 8 0 1 1 17.7 6M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12.2 11 14l4.3-4.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <strong>Réviser mes erreurs</strong><small>Revois seulement les questions à retravailler.</small><span class="mode-arrow">↗</span>
+          </button>
+          <button class="mode-card" data-mode="translations" id="translations-mode">
+            <span class="mode-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5h10M9 3v2.5m4.7 0c-.6 4.2-3.4 7.6-7.7 9.2M7 8.2c1.2 2.5 3.4 4.6 6.2 5.8M13 20l4-10 4 10m-6.7-3h5.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <strong>Retravailler les traductions</strong><small>Retente uniquement les sens encore hésitants.</small><span class="mode-arrow">↗</span>
+          </button>
+        </div>
+        <div class="saved-panel" id="resume-panel" hidden>
+          <p>Ta séance est en cours. Tu peux reprendre là où tu t'es arrêté.</p>
+          <button class="text-button" id="resume-button">Reprendre la séance →</button>
+        </div>
+        <div class="dashboard-strip">
+          <div><div class="dash-label">Tes acquis</div><div class="dash-score"><span id="home-qcm">0</span> <span>/</span> 20 au QCM <span style="padding:0 8px">·</span> <span id="home-translation">0</span> <span>/</span> 20 en traduction</div></div>
+          <div class="dash-progress"><div class="progress-meta"><span>Verbes maîtrisés</span><span id="mastery-label">0 / 20</span></div><div class="progress-track"><div class="progress-fill" id="mastery-progress"></div></div></div>
+        </div>
+        <p class="footnote">Tes réponses sont enregistrées sur cet appareil pendant ta progression.</p>
+      </section>
+
+      <section id="quiz" class="screen" hidden>
+        <div class="quiz-wrap">
+          <div class="quiz-top"><button class="back-button" id="leave-button">← <span>Tableau de bord</span></button><span class="mode-badge" id="mode-badge">Entraînement complet</span></div>
+          <div class="quiz-progress">
+            <div class="quiz-progress-top"><span id="step-label">Verbe 1 sur 20</span><span id="step-percent">0 %</span></div>
+            <div class="progress-track"><div class="progress-fill" id="quiz-progress-fill"></div></div>
+          </div>
+          <div class="score-row">
+            <div class="score-pill"><span class="score-dot"></span> QCM <b id="quiz-score">0/20</b></div>
+            <div class="score-pill translation"><span class="score-dot"></span> Traduction <b id="translation-score">0/20</b></div>
+          </div>
+          <article class="question-card" id="question-card"></article>
+        </div>
+      </section>
+
+      <section id="results" class="screen" hidden>
+        <div class="result-wrap" id="results-content"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+  (() => {
+    "use strict";
+    const verbs = [
+      { infinitive: "awake", past: "awoke", participle: "awoken", translation: "se réveiller" },
+      { infinitive: "be", past: "was/were", participle: "been", translation: "être" },
+      { infinitive: "beat", past: "beat", participle: "beaten", translation: "battre" },
+      { infinitive: "become", past: "became", participle: "become", translation: "devenir" },
+      { infinitive: "begin", past: "began", participle: "begun", translation: "commencer" },
+      { infinitive: "bend", past: "bent", participle: "bent", translation: "courber" },
+      { infinitive: "bet", past: "bet", participle: "bet", translation: "parier" },
+      { infinitive: "bind", past: "bound", participle: "bound", translation: "lier" },
+      { infinitive: "bite", past: "bit", participle: "bitten", translation: "mordre" },
+      { infinitive: "bleed", past: "bled", participle: "bled", translation: "saigner" },
+      { infinitive: "blow", past: "blew", participle: "blown", translation: "souffler" },
+      { infinitive: "break", past: "broke", participle: "broken", translation: "casser" },
+      { infinitive: "bring", past: "brought", participle: "brought", translation: "apporter" },
+      { infinitive: "build", past: "built", participle: "built", translation: "construire" },
+      { infinitive: "burn", past: "burnt", participle: "burnt", translation: "brûler" },
+      { infinitive: "burst", past: "burst", participle: "burst", translation: "éclater" },
+      { infinitive: "buy", past: "bought", participle: "bought", translation: "acheter" },
+      { infinitive: "catch", past: "caught", participle: "caught", translation: "attraper" },
+      { infinitive: "choose", past: "chose", participle: "chosen", translation: "choisir" },
+      { infinitive: "come", past: "came", participle: "come", translation: "venir" }
+    ];
+    const aliases = {
+      awake: ["se réveiller", "se réveille", "se réveillé", "se réveillait", "s'éveiller", "s'éveille", "s'éveillé"],
+      be: ["être", "été", "suis", "es", "est", "sommes", "êtes", "sont", "étais", "était", "étions", "étiez", "étaient", "fut", "furent", "étant"],
+      beat: ["battre", "battu", "battue", "battus", "battues", "bat", "battait"],
+      become: ["devenir", "devenu", "devenue", "devenus", "devenues", "devient", "deviens", "deviennent", "devenait"],
+      begin: ["commencer", "commencé", "commence", "commença", "débuter", "débuté", "débute"],
+      bend: ["courber", "courbé", "courbée", "courbe", "plier", "plié", "pliée", "se courber", "se plier"],
+      bet: ["parier", "pari", "parié", "parie", "pariait"],
+      bind: ["lier", "lié", "liée", "liés", "liées", "attacher", "attaché", "relier", "relié"],
+      bite: ["mordre", "mordu", "mord", "mordait"],
+      bleed: ["saigner", "saigné", "saigne", "saignait"],
+      blow: ["souffler", "soufflé", "souffle", "soufflait"],
+      break: ["casser", "cassé", "briser", "brisé", "rompre", "rompu"],
+      bring: ["apporter", "apporté", "amener", "amené"],
+      build: ["construire", "construit", "construite", "bâtir", "bâti", "bâtie"],
+      burn: ["brûler", "brûlé", "brûle"],
+      burst: ["éclater", "éclaté", "exploser", "explosé"],
+      buy: ["acheter", "acheté", "achète", "achete"],
+      catch: ["attraper", "attrapé", "saisir", "saisi", "capturer", "capturé"],
+      choose: ["choisir", "choisi", "choisit"],
+      come: ["venir", "venu", "venue", "venus", "venues", "vient", "viens", "venait", "arriver", "arrivé"]
+    };
+    const nearMisses = {
+      bet: ["parler", "parle"],
+      bind: ["lien", "lire"],
+      break: ["caser"],
+      bring: ["emporter", "emporté"],
+      come: ["tenir", "tient", "tenu"]
+    };
+    const storeKey = "verba-session-v1";
+    const emptyRecords = () => Object.fromEntries(verbs.map(v => [v.infinitive, { quiz: false, translation: false }]));
+    const freshState = () => ({ records: emptyRecords(), active: null });
+    let saved = freshState();
+    try {
+      const raw = JSON.parse(localStorage.getItem(storeKey) || "null");
+      if (raw && raw.records && typeof raw.records === "object") {
+        saved.records = emptyRecords();
+        for (const v of verbs) {
+          const r = raw.records[v.infinitive];
+          if (r) saved.records[v.infinitive] = { quiz: r.quiz === true, translation: r.translation === true };
+        }
+        if (raw.active && Array.isArray(raw.active.queue) && raw.active.queue.length && Number.isInteger(raw.active.index)) {
+          const queue = raw.active.queue.filter(item => verbs.some(v => v.infinitive === item.verb) && (item.quiz || item.translation));
+          if (queue.length && raw.active.index < queue.length) {
+            saved.active = { mode: raw.active.mode, queue, index: Math.max(0, raw.active.index), stage: raw.active.stage === "translation" ? "translation" : "quiz" };
+          }
+        }
+      }
+    } catch (_) { saved = freshState(); }
+    const copySession = session => session ? { ...session, queue: session.queue.map(item => ({ ...item })) } : null;
+    const state = { view: "home", records: saved.records, active: saved.active, checkpoint: copySession(saved.active), feedback: null, selectedOption: null, options: [] };
+    const byId = Object.fromEntries(verbs.map(v => [v.infinitive, v]));
+    const modeNames = { training: "Entraînement complet", random: "Dans le désordre", review: "Révision des erreurs", translations: "Traductions à retravailler" };
+    const $ = id => document.getElementById(id);
+    const normalize = value => String(value || "").toLocaleLowerCase("fr").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[’']/g, " ").replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
+    const shuffled = arr => {
+      const out = [...arr];
+      for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+      return out;
+    };
+    const allAliases = Object.fromEntries(Object.entries(aliases).map(([key, list]) => [key, list.map(normalize)]));
+    function editDistance(a, b, cutoff = 3) {
+      if (Math.abs(a.length - b.length) > cutoff) return cutoff + 1;
+      let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        const row = [i]; let rowMin = i;
+        for (let j = 1; j <= b.length; j++) {
+          row[j] = Math.min(row[j - 1] + 1, prev[j] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          rowMin = Math.min(rowMin, row[j]);
+        }
+        if (rowMin > cutoff) return cutoff + 1;
+        prev = row;
+      }
+      return prev[b.length];
+    }
+    function understands(answer, verb) {
+      const candidate = normalize(answer);
+      if (!candidate) return false;
+      const own = allAliases[verb.infinitive] || [normalize(verb.translation)];
+      if (own.includes(candidate)) return true;
+      if ((nearMisses[verb.infinitive] || []).map(normalize).includes(candidate)) return false;
+      const compact = candidate.replace(/\s/g, "");
+      if (compact.length < 4) return false;
+      const variants = own.map(x => x.replace(/\s/g, ""));
+      const allowance = compact.length > 10 ? 2 : 1;
+      let best = allowance + 1;
+      for (const variant of variants) best = Math.min(best, editDistance(compact, variant, allowance));
+      if (best < 1 || best > allowance) return false;
+      for (const [other, list] of Object.entries(allAliases)) {
+        if (other === verb.infinitive) continue;
+        for (const variant of list) {
+          const otherWord = variant.replace(/\s/g, "");
+          if (editDistance(compact, otherWord, allowance) <= best) return false;
+        }
+      }
+      return true;
+    }
+    const displayForms = v => `${v.past}  ·  ${v.participle}`;
+    const pairKey = (past, participle) => `${past.toLowerCase()}|${participle.toLowerCase()}`;
+    function distanceRatio(a, b) {
+      const x = a.toLowerCase(), y = b.toLowerCase();
+      return 1 - editDistance(x, y, 12) / Math.max(x.length, y.length, 1);
+    }
+    function makeOptions(correct) {
+      const seen = new Set([pairKey(correct.past, correct.participle)]);
+      const candidates = verbs.filter(v => v.infinitive !== correct.infinitive && !seen.has(pairKey(v.past, v.participle)));
+      const ranked = candidates.map(v => {
+        const exact = Number(v.past === correct.past) + Number(v.participle === correct.participle);
+        const sim = (distanceRatio(v.past, correct.past) + distanceRatio(v.participle, correct.participle)) / 2;
+        return { v, weight: 1 + exact * 4 + sim * 2 };
+      }).sort((a, b) => b.weight - a.weight);
+      const pool = ranked.slice(0, Math.min(11, ranked.length));
+      const picks = [];
+      while (picks.length < 3 && pool.length) {
+        const sum = pool.reduce((n, item) => n + item.weight, 0);
+        let roll = Math.random() * sum, chosen = pool.length - 1;
+        for (let i = 0; i < pool.length; i++) { roll -= pool[i].weight; if (roll <= 0) { chosen = i; break; } }
+        picks.push(pool.splice(chosen, 1)[0].v);
+      }
+      return shuffled([{ past: correct.past, participle: correct.participle, correct: true }, ...picks.map(v => ({ past: v.past, participle: v.participle, correct: false }))]);
+    }
+    function persist() {
+      try { localStorage.setItem(storeKey, JSON.stringify({ records: state.records, active: state.checkpoint })); } catch (_) { /* Session still works if storage is unavailable. */ }
+      renderHomeStats();
+    }
+    function counts() {
+      return { quiz: verbs.filter(v => state.records[v.infinitive]?.quiz).length, translation: verbs.filter(v => state.records[v.infinitive]?.translation).length };
+    }
+    function renderHomeStats() {
+      const c = counts();
+      const mastered = verbs.filter(v => state.records[v.infinitive]?.quiz && state.records[v.infinitive]?.translation).length;
+      $("home-qcm").textContent = c.quiz; $("home-translation").textContent = c.translation;
+      $("mastery-label").textContent = `${mastered} / 20`; $("mastery-progress").style.width = `${mastered * 5}%`;
+      const reviewCount = verbs.filter(v => !state.records[v.infinitive]?.quiz || !state.records[v.infinitive]?.translation).length;
+      const translationCount = verbs.filter(v => !state.records[v.infinitive]?.translation).length;
+      $("review-mode").disabled = reviewCount === 0;
+      $("translations-mode").disabled = translationCount === 0;
+      $("resume-panel").hidden = !(state.checkpoint || state.active);
+    }
+    function setView(view) {
+      state.view = view;
+      for (const name of ["home", "quiz", "results"]) $(name).hidden = name !== view;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    function makeQueue(mode) {
+      if (mode === "training" || mode === "random") {
+        const list = mode === "random" ? shuffled(verbs) : [...verbs];
+        return list.map(v => ({ verb: v.infinitive, quiz: true, translation: true }));
+      }
+      return verbs.map(v => {
+        const r = state.records[v.infinitive];
+        return { verb: v.infinitive, quiz: mode === "review" && !r.quiz, translation: !r.translation };
+      }).filter(plan => plan.quiz || plan.translation);
+    }
+    function startMode(mode) {
+      if (mode === "training" || mode === "random") state.records = emptyRecords();
+      const queue = makeQueue(mode);
+      if (!queue.length) return;
+      state.active = { mode, queue, index: 0, stage: queue[0].quiz ? "quiz" : "translation" };
+      state.checkpoint = copySession(state.active);
+      state.feedback = null; state.selectedOption = null; state.options = [];
+      persist(); setView("quiz"); renderQuestion();
+    }
+    function resume() {
+      if (state.checkpoint) state.active = copySession(state.checkpoint);
+      if (!state.active) return;
+      state.checkpoint = copySession(state.active);
+      state.feedback = null; state.selectedOption = null; state.options = [];
+      setView("quiz"); renderQuestion();
+    }
+    function currentPlan() { return state.active?.queue[state.active.index]; }
+    function progressInfo() {
+      const a = state.active, plan = currentPlan();
+      const total = a.queue.reduce((sum, p) => sum + Number(p.quiz) + Number(p.translation), 0);
+      let done = a.queue.slice(0, a.index).reduce((sum, p) => sum + Number(p.quiz) + Number(p.translation), 0);
+      if (a.stage === "translation" && plan.quiz) done++;
+      const percentage = total ? Math.round(done / total * 100) : 0;
+      return { total, done, percentage };
+    }
+    function renderQuestion() {
+      if (!state.active) return;
+      const a = state.active, plan = currentPlan(), verb = byId[plan.verb], c = counts();
+      if (!plan) { finishRun(); return; }
+      const progress = progressInfo();
+      $("mode-badge").textContent = modeNames[a.mode] || modeNames.training;
+      $("step-label").textContent = `Verbe ${a.index + 1} sur ${a.queue.length}`;
+      $("step-percent").textContent = `${progress.percentage} %`;
+      $("quiz-progress-fill").style.width = `${progress.percentage}%`;
+      $("quiz-score").textContent = `${c.quiz}/20`; $("translation-score").textContent = `${c.translation}/20`;
+      if (a.stage === "quiz") {
+        state.options = makeOptions(verb); state.feedback = null; state.selectedOption = null;
+        $("question-card").innerHTML = `<div class="eyebrow"><span class="tiny-spark">✳</span> question ${String(a.index + 1).padStart(2, "0")} · formes anglaises</div>
+          <h1>${verb.infinitive}</h1><p class="question-hint">Choisis le prétérit et le participe passé qui correspondent à cet infinitif.</p>
+          <div class="option-list">${state.options.map((o, i) => `<button class="option" data-option="${i}" aria-label="Réponse ${String.fromCharCode(65 + i)} : ${o.past}, ${o.participle}"><span class="option-letter">${String.fromCharCode(65 + i)}</span><span class="option-text">${o.past}<span style="color:#a4ada6;font-weight:450"> — </span>${o.participle}</span></button>`).join("")}</div>
+          <div class="feedback" id="answer-feedback" hidden></div><div class="card-actions" id="quiz-action" hidden><button class="primary-button" id="quiz-continue">Continuer <span aria-hidden="true">→</span></button></div>`;
+        document.querySelectorAll("[data-option]").forEach(button => button.addEventListener("click", () => selectOption(Number(button.dataset.option))));
+      } else {
+        state.feedback = null;
+        $("question-card").innerHTML = `<div class="eyebrow"><span class="tiny-spark">✳</span> question ${String(a.index + 1).padStart(2, "0")} · traduction</div>
+          <h1>${verb.infinitive}</h1><p class="question-hint">Quelle est la traduction française de <strong>${verb.infinitive}</strong> ?</p>
+          <form class="translation-form" id="translation-form"><input class="translation-input" id="translation-input" type="text" autocomplete="off" placeholder="Écris ta réponse ici…" aria-label="Traduction française de ${verb.infinitive}" maxlength="80"><button class="primary-button translation-submit" type="submit">Valider <span aria-hidden="true">→</span></button></form>
+          <p class="translation-foot">Les accents et les petites fautes de frappe sont pris en compte.</p>
+          <div class="feedback" id="answer-feedback" hidden></div><div class="card-actions" id="translation-action" hidden><button class="primary-button" id="translation-continue">${a.index + 1 === a.queue.length ? "Voir mes résultats" : "Verbe suivant"} <span aria-hidden="true">→</span></button></div>`;
+        $("translation-form").addEventListener("submit", event => { event.preventDefault(); submitTranslation(); });
+        $("translation-input").focus({ preventScroll: true });
+      }
+    }
+    function selectOption(index) {
+      const plan = currentPlan(), verb = byId[plan.verb], selected = state.options[index];
+      if (!selected || state.feedback) return;
+      const isCorrect = selected.correct;
+      state.records[verb.infinitive].quiz = isCorrect;
+      state.selectedOption = index; state.feedback = isCorrect ? "good" : "bad";
+      document.querySelectorAll("[data-option]").forEach((button, i) => {
+        button.disabled = true;
+        if (state.options[i].correct) button.classList.add("is-correct");
+        else if (i === index) button.classList.add("is-wrong");
+      });
+      const box = $("answer-feedback");
+      box.hidden = false; box.className = `feedback ${isCorrect ? "good" : "bad"}`;
+      box.innerHTML = `<span class="feedback-mark">${isCorrect ? "✓" : "!"}</span><div class="feedback-copy"><strong>${isCorrect ? "Bonne réponse !" : "Pas tout à fait."}</strong><p>${isCorrect ? "Tu as reconnu les deux formes." : `La bonne réponse était <b>${verb.past} — ${verb.participle}</b>.`}</p></div>`;
+      state.checkpoint = nextAfterAnswer("quiz");
+      $("quiz-action").hidden = false; $("quiz-continue").addEventListener("click", continueStep);
+      $("quiz-score").textContent = `${counts().quiz}/20`;
+      persist();
+    }
+    function submitTranslation() {
+      const input = $("translation-input"), answer = input.value.trim();
+      if (!answer || state.feedback) { if (!answer) input.focus(); return; }
+      const plan = currentPlan(), verb = byId[plan.verb], isCorrect = understands(answer, verb);
+      state.records[verb.infinitive].translation = isCorrect; state.feedback = isCorrect ? "good" : "bad";
+      input.disabled = true; document.querySelector(".translation-submit").disabled = true;
+      const box = $("answer-feedback"); box.hidden = false; box.className = `feedback ${isCorrect ? "good" : "bad"}`;
+      box.innerHTML = `<span class="feedback-mark">${isCorrect ? "✓" : "!"}</span><div class="feedback-copy"><strong>${isCorrect ? "Oui, c'est ça !" : "À retenir pour la prochaine fois."}</strong><p>${isCorrect ? "Le sens est bien compris." : `La traduction attendue est <b>${verb.translation}</b>.`}</p></div>`;
+      state.checkpoint = nextAfterAnswer("translation");
+      $("translation-action").hidden = false;
+      $("translation-continue").addEventListener("click", continueStep);
+      $("translation-score").textContent = `${counts().translation}/20`;
+      persist();
+    }
+    function nextAfterAnswer(stage) {
+      const index = state.active.index;
+      const plan = state.active.queue[index];
+      if (stage === "quiz" && plan.translation) return { ...state.active, stage: "translation" };
+      const nextIndex = index + 1;
+      if (nextIndex >= state.active.queue.length) return null;
+      const next = state.active.queue[nextIndex];
+      return { ...state.active, index: nextIndex, stage: next.quiz ? "quiz" : "translation" };
+    }
+    function continueStep() {
+      state.active = copySession(state.checkpoint);
+      if (!state.active) { finishRun(); return; }
+      state.checkpoint = copySession(state.active);
+      state.feedback = null; state.selectedOption = null; state.options = [];
+      persist(); renderQuestion();
+    }
+    function finishRun() {
+      state.active = null; state.checkpoint = null; state.feedback = null; state.selectedOption = null; state.options = [];
+      persist(); renderResults(); setView("results");
+    }
+    function statusCell(ok) { return ok ? '<span class="status-ok">Réussi</span>' : '<span class="status-no">À revoir</span>'; }
+    function renderResults() {
+      const c = counts();
+      const mastered = verbs.filter(v => state.records[v.infinitive].quiz && state.records[v.infinitive].translation);
+      const revisit = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
+      const notMastered = verbs.filter(v => !state.records[v.infinitive].quiz || !state.records[v.infinitive].translation);
+      const title = mastered.length === 20 ? "Tout est maîtrisé !" : mastered.length >= 14 ? "Très belle progression !" : mastered.length >= 7 ? "Les bases se construisent." : "Chaque essai te fait avancer.";
+      const tableRows = verbs.map(v => {
+        const r = state.records[v.infinitive];
+        return `<tr><td>${v.infinitive}</td><td>${v.past}</td><td>${v.participle}</td><td>${v.translation}</td><td>${statusCell(r.quiz)}</td><td>${statusCell(r.translation)}</td></tr>`;
+      }).join("");
+      $("results-content").innerHTML = `<div class="result-hero"><div class="eyebrow"><span class="tiny-spark">✳</span> séance terminée</div><h1>${title}</h1><p>Voici où tu en es sur les 20 verbes. Tu peux refaire un parcours ou cibler ce qui mérite encore un peu de pratique.</p>
+        <div class="final-score"><div class="score-total">${c.quiz + c.translation}<small>/40</small></div><div class="score-breakdown"><span>QCM <b>${c.quiz} / 20</b></span><span>Traductions <b>${c.translation} / 20</b></span></div></div>
+        <div class="result-actions"><button class="primary-button" id="restart-button">Recommencer les 20 verbes <span aria-hidden="true">↻</span></button><button class="secondary-button" id="retry-errors" ${revisit.length ? "" : "disabled"}>Réviser les erreurs${revisit.length ? ` · ${revisit.length}` : ""}</button><button class="secondary-button" id="retry-translations" ${verbs.some(v => !state.records[v.infinitive].translation) ? "" : "disabled"}>Refaire les traductions ratées</button></div></div>
+        <div class="result-sections"><div class="result-stat"><small>Verbes maîtrisés</small><strong>${mastered.length} sur 20</strong><p>${mastered.length ? mastered.map(v => v.infinitive).join(" · ") : "Aucun pour l'instant."}</p></div><div class="result-stat"><small>À retravailler</small><strong>${notMastered.length} sur 20</strong><p>${notMastered.length ? notMastered.map(v => v.infinitive).join(" · ") : "Tout est réussi."}</p></div></div>
+        <div class="recap-heading"><h2>Le récapitulatif</h2><p>Les bonnes formes sont affichées pour chaque verbe.</p></div>
+        <div class="recap-table-wrap"><table class="recap-table"><thead><tr><th>Infinitif</th><th>Prétérit</th><th>Participe passé</th><th>Traduction</th><th>QCM</th><th>Sens</th></tr></thead><tbody>${tableRows}</tbody></table></div>
+        <div class="result-bottom"><button class="back-button" id="results-home">← Retour au tableau de bord</button></div>`;
+      $("restart-button").addEventListener("click", () => { state.records = emptyRecords(); persist(); startMode("training"); });
+      $("retry-errors").addEventListener("click", () => startMode("review"));
+      $("retry-translations").addEventListener("click", () => startMode("translations"));
+      $("results-home").addEventListener("click", () => { setView("home"); renderHomeStats(); });
+    }
+    document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => startMode(button.dataset.mode)));
+    $("resume-button").addEventListener("click", resume);
+    $("leave-button").addEventListener("click", () => {
+      if (state.feedback && !state.checkpoint) { finishRun(); return; }
+      state.active = copySession(state.checkpoint); state.feedback = null; state.selectedOption = null; state.options = []; setView("home"); renderHomeStats();
+    });
+    renderHomeStats();
+    if (state.active) resume();
+  })();
+  </script>
+</body>
+</html>
